@@ -2,9 +2,10 @@ import React from 'react';
 
 interface HeaderProps {
   onReset?: () => void;
+  isDemoMode?: boolean;
 }
 
-export function Header({ onReset }: HeaderProps) {
+export function Header({ onReset, isDemoMode = false }: HeaderProps) {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="container mx-auto px-4 py-4">
@@ -16,8 +17,23 @@ export function Header({ onReset }: HeaderProps) {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">GenAI Conversation Viewer</h1>
-              <p className="text-sm text-gray-500">Visualize conversation history from GenAI tools</p>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl font-semibold text-gray-900">GenAI Conversation Viewer</h1>
+                {isDemoMode && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Demo Mode
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-500">
+                {isDemoMode 
+                  ? "Exploring with example conversation data" 
+                  : "Visualize conversation history from GenAI tools"
+                }
+              </p>
             </div>
           </div>
           
