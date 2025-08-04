@@ -9,4 +9,7 @@ export default defineConfig({
     outDir: '../../web-dist',
     emptyOutDir: true
   }
+  // Note: Client-side routing is handled automatically by Vite's dev server
+  // For production, CloudFront is configured to redirect 404s to index.html
+  // This ensures both /demo and / routes work correctly in all environments
 })
