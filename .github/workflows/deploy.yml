@@ -43,7 +43,7 @@ jobs:
         run: pnpm typecheck
         
       - name: 🏗️ Build website
-        run: pnpm --filter @q-view/website build
+        run: pnpm run build:web
         
       - name: 🔐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
