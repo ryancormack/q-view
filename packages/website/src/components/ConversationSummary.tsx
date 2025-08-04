@@ -147,7 +147,7 @@ export function ConversationSummary({ data, onToolClick }: ConversationSummaryPr
                   {onToolClick ? (
                     <button
                       onClick={() => onToolClick(toolName)}
-                      className="text-sm font-medium text-purple-600 hover:text-purple-800 hover:underline transition-colors text-left"
+                      className="text-sm font-medium text-purple-600 hover:text-purple-800 hover:underline transition-colors text-left cursor-pointer"
                       title={`View details for ${toolName}`}
                     >
                       {toolName}

@@ -17,6 +17,7 @@ interface MessageCardProps {
 
 export function MessageCard({ message, turnIndex, messageIndex }: MessageCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isToolResultsExpanded, setIsToolResultsExpanded] = useState(false);
 
   if (isUserSystemMessage(message)) {
     const isUserPrompt = isPromptContent(message.content);
@@ -74,51 +75,50 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
         {isToolUseResultsContent(message.content) && (
           <div className="bg-white rounded border p-3 mb-3">
             <h4 className="text-sm font-medium text-gray-900 mb-2">Tool Use Results</h4>
-            <div className="space-y-3">
-              {message.content.ToolUseResults.tool_use_results.map((result, idx) => (
-                <div key={idx} className="border rounded p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono text-gray-600">{result.tool_use_id}</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      result.status === 'Success' 
-                        ? 'bg-success-100 text-success-800' 
-                        : 'bg-error-100 text-error-800'
-                    }`}>
-                      {result.status}
-                    </span>
+            
+            <button
+              onClick={() => setIsToolResultsExpanded(!isToolResultsExpanded)}
+              className="text-xs text-gray-600 hover:text-gray-800 mb-2 cursor-pointer"
+            >
+              {isToolResultsExpanded ? 'Hide' : 'Show'} Results
+            </button>
+            
+            {isToolResultsExpanded && (
+              <div className="space-y-3">
+                {message.content.ToolUseResults.tool_use_results.map((result, idx) => (
+                  <div key={idx} className="border rounded p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono text-gray-600">{result.tool_use_id}</span>
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        result.status === 'Success' 
+                          ? 'bg-success-100 text-success-800' 
+                          : 'bg-error-100 text-error-800'
+                      }`}>
+                        {result.status}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {result.content.map((content, contentIdx) => (
+                        <div key={contentIdx}>
+                          {content.Text && (
+                            <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                              {content.Text}
+                            </div>
+                          )}
+                          {content.Json && (
+                            <JsonViewer data={content.Json} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {result.content.map((content, contentIdx) => (
-                      <div key={contentIdx}>
-                        {content.Text && (
-                          <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                            {content.Text}
-                          </div>
-                        )}
-                        {content.Json && (
-                          <JsonViewer data={content.Json} />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {message.env_context && (
-          <div className="bg-gray-50 rounded border p-3 mb-3">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Environment Context</h4>
-            <div className="text-xs space-y-1">
-              <div><span className="font-medium">OS:</span> {message.env_context.env_state.operating_system}</div>
-              <div><span className="font-medium">CWD:</span> {message.env_context.env_state.current_working_directory}</div>
-              {message.env_context.env_state.environment_variables.length > 0 && (
-                <div><span className="font-medium">Env Vars:</span> {message.env_context.env_state.environment_variables.length} variables</div>
-              )}
-            </div>
-          </div>
-        )}
+
 
         {message.additional_context && (
           <div className="bg-gray-50 rounded border p-3">
@@ -175,7 +175,7 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
               
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-xs text-purple-600 hover:text-purple-800 mb-2"
+                className="text-xs text-purple-600 hover:text-purple-800 mb-2 cursor-pointer"
               >
                 {isExpanded ? 'Hide' : 'Show'} Arguments
               </button>

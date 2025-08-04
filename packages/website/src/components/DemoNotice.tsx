@@ -7,40 +7,43 @@ interface DemoNoticeProps {
 export function DemoNotice({ onGoToUpload }: DemoNoticeProps) {
   return (
     <div 
-      className="bg-warning-50 border-l-4 border-warning-500 p-4 mb-6"
+      className="bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 rounded-lg p-6 mb-8 shadow-sm"
       role="banner"
       aria-label="Demo notice"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <svg 
-              className="w-5 h-5 text-warning-600" 
-              fill="currentColor" 
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
-              <path 
-                fillRule="evenodd" 
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" 
-                clipRule="evenodd" 
-              />
-            </svg>
+            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+              <svg 
+                className="w-5 h-5 text-white" 
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+            </div>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-warning-800">
-              Demo Mode
-            </p>
-            <p className="text-sm text-warning-700">
-              You're viewing example conversation data to explore the application's features.
+          <div className="ml-4">
+            <h3 className="text-lg font-semibold text-blue-900">
+              Q CLI Demo Mode
+            </h3>
+            <p className="text-blue-700 mt-1">
+              You're exploring a sample Amazon Q Developer conversation to see how the viewer works. 
+              This includes real tool usage patterns and conversation flow.
             </p>
           </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 ml-6">
           <button
             onClick={onGoToUpload}
-            className="inline-flex items-center px-3 py-2 border border-warning-300 rounded-md shadow-sm text-sm font-medium text-warning-800 bg-warning-100 hover:bg-warning-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warning-500 transition-colors"
-            aria-label="Go to upload page to analyze your own conversation data"
+            className="inline-flex items-center px-4 py-2 border-2 border-blue-300 rounded-lg shadow-sm text-sm font-semibold text-blue-800 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all cursor-pointer"
+            aria-label="Go to upload page to analyze your own Q CLI conversation data"
           >
             <svg 
               className="w-4 h-4 mr-2" 
@@ -56,7 +59,7 @@ export function DemoNotice({ onGoToUpload }: DemoNoticeProps) {
                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" 
               />
             </svg>
-            Upload Your Own File
+            Upload Your Q CLI File
           </button>
         </div>
       </div>

@@ -1,28 +1,61 @@
-# Q Conversation Viewer - Website Package
+# Q CLI Conversation Viewer - Website
 
-React frontend for visualizing GenAI conversation JSON files. Built with TypeScript, React 18, Vite, and Tailwind CSS v4.
+React frontend for visualizing and analyzing Amazon Q Developer conversation history from Q CLI.
 
-## Features
+## 🎯 Features
 
-- **File Upload**: Drag and drop or select JSON files containing conversation history
-- **Schema Validation**: Validates uploaded files against the expected conversation schema
-- **Conversation Flow**: Displays messages in chronological order with clear visual distinction
-- **Tool Usage Visualization**: Shows tool calls with expandable arguments
-- **Summary Dashboard**: Provides statistics and analytics about the conversation
-- **Tools Panel**: Displays available tools and their specifications
-- **Clickable Navigation**: Click tools in summary to jump to details in tools tab
+- **📁 File Upload**: Drag & drop interface for Q CLI conversation JSON files
+- **🔍 Schema Validation**: Built-in validation against Q CLI conversation format
+- **💬 Conversation Flow**: Visual representation of message types and flow
+- **📊 Tool Analytics**: Interactive dashboard showing tool usage patterns
+- **🔧 Tool Explorer**: Detailed view of available tools and their schemas
+- **🎨 Q CLI Branding**: Orange-themed design matching Amazon Q Developer
 
-## Technology Stack
+## 🏗️ Architecture
 
-- **TypeScript**: Type-safe development
-- **React 18**: Modern React with hooks
-- **Vite**: Fast build tool and dev server
-- **Tailwind CSS v4**: Latest utility-first CSS framework
-- **JSON Schema Validation**: Ensures data integrity
+### Components
 
-## Development
+- **Header**: Navigation with Q CLI branding and demo mode indicator
+- **FileUpload**: Drag & drop interface with format validation
+- **ConversationViewer**: Main viewer with tabbed interface
+- **SchemaViewer**: Modal for displaying JSON schema
+- **DemoNotice**: Banner for demo mode indication
 
-From the **monorepo root**:
+### Pages
+
+- **HomePage**: Main upload interface and feature overview
+- **DemoPage**: Demo mode with sample conversation data
+
+### Utils
+
+- **demoDataLoader**: Handles loading and validation of demo data
+- **validation**: JSON schema validation utilities
+
+## 🎨 Design System
+
+### Color Scheme
+
+- **Primary Orange**: `#f97316` - Main Q CLI brand color
+- **Secondary Blue**: `#3b82f6` - For demo and secondary actions
+- **Purple**: `#a855f7` - For technical/schema content
+- **Success Green**: `#22c55e` - For AI responses
+- **Gray**: Various shades for neutral content
+
+### Message Type Indicators
+
+- **🔵 User Messages**: Blue left border, light blue background
+- **🟣 Tool Use**: Purple left border, light purple background
+- **⚫ Tool Results**: Gray left border, light gray background
+- **🟢 AI Responses**: Green left border, light green background
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm 8+
+
+### Setup
 
 ```bash
 # Install dependencies
@@ -32,97 +65,121 @@ pnpm install
 pnpm dev
 
 # Build for production
-pnpm --filter @q-convo-viewer/website build
-
-# Type checking
-pnpm --filter @q-convo-viewer/website typecheck
-```
-
-From the **website package**:
-
-```bash
-# Start development server
-pnpm dev
-
-# Build for production
 pnpm build
-
-# Preview production build
-pnpm preview
 
 # Type checking
 pnpm typecheck
+
+# Linting
+pnpm lint
 ```
 
-## Usage
-
-1. **Start the application** using `pnpm dev`
-2. **Upload a JSON file** by either:
-   - Dragging and dropping a `.json` file onto the upload area
-   - Clicking "Choose File" and selecting a file
-3. **View the conversation** in the main interface with three tabs:
-   - **Conversation**: Step-by-step message flow
-   - **Summary**: Statistics and analytics (click tools to navigate)
-   - **Tools**: Available tools and their specifications
-
-## JSON Schema
-
-The application expects JSON files that match the GenAI conversation schema:
-
-```json
-{
-  "conversation_id": "uuid-string",
-  "history": [
-    [/* array of messages per turn */]
-  ],
-  "transcript": ["string array"],
-  "tools": { /* optional tools object */ },
-  "model": "model-name"
-}
-```
-
-## Message Types
-
-- **User Messages** (blue): User input and prompts
-- **Tool Results** (gray): Results from tool execution
-- **Tool Use Messages** (purple): AI tool invocations with arguments
-- **AI Response Messages** (green): AI-generated responses
-
-## File Structure
+### File Structure
 
 ```
 src/
-├── components/           # React components
-│   ├── ConversationFlow.tsx    # Main conversation display
-│   ├── ConversationSummary.tsx # Statistics dashboard
-│   ├── ConversationViewer.tsx  # Main viewer with tabs
-│   ├── FileUpload.tsx          # File upload interface
-│   ├── Header.tsx              # Application header
-│   ├── JsonViewer.tsx          # JSON data display
-│   ├── MessageCard.tsx         # Individual message display
-│   └── ToolsPanel.tsx          # Tools information panel
-├── types.ts              # TypeScript type definitions
-├── App.tsx               # Main application component
-├── main.tsx              # React entry point
-└── index.css             # Tailwind CSS and custom styles
+├── components/          # Reusable UI components
+│   ├── Header.tsx      # Main navigation header
+│   ├── FileUpload.tsx  # File upload interface
+│   ├── ConversationViewer.tsx  # Main conversation display
+│   ├── SchemaViewer.tsx        # JSON schema modal
+│   └── ...
+├── pages/              # Route components
+│   ├── HomePage.tsx    # Main upload page
+│   └── DemoPage.tsx    # Demo mode page
+├── utils/              # Utility functions
+│   ├── demoDataLoader.ts  # Demo data handling
+│   └── validation.ts      # Schema validation
+├── types.ts            # TypeScript type definitions
+├── index.css           # Global styles and theme
+└── main.tsx           # Application entry point
 ```
 
-## Customization
+## 📋 Q CLI Data Format
 
-### Styling
+The application expects JSON files with this structure:
 
-The application uses Tailwind CSS v4 with a custom theme defined in `src/index.css`. You can modify colors, fonts, and other design tokens in the `@theme` section.
+```typescript
+interface ConversationData {
+  conversation_id: string;
+  history: MessageTurn[][];
+  transcript: string[];
+  tools?: {
+    [namespace: string]: ToolSpecification[];
+  };
+  model?: string;
+  // ... other optional fields
+}
+```
 
-### Adding Features
+### Message Types
 
-The modular component structure makes it easy to add new features:
+1. **User/System Messages**: User prompts and system context
+2. **Tool Use Messages**: Q Developer invoking tools with parameters
+3. **Tool Result Messages**: Results returned from tool execution
+4. **Response Messages**: Q Developer's text responses
 
-- Add new message types by extending the `Message` union type in `types.ts`
-- Create new visualization components in the `components/` directory
-- Add new tabs to the `ConversationViewer` component
+## 🎯 Usage Flow
 
-## Browser Support
+1. **Upload**: User drags/drops or selects Q CLI conversation JSON
+2. **Validation**: File is validated against expected schema
+3. **Processing**: Conversation data is parsed and analyzed
+4. **Visualization**: Three-tab interface displays:
+   - **Conversation**: Chronological message flow
+   - **Summary**: Tool usage statistics and patterns
+   - **Tools**: Detailed tool specifications
 
-- Chrome/Edge 88+
-- Firefox 78+
-- Safari 14+
+## 🔧 Configuration
+
+### Vite Configuration
+
+- React plugin for JSX support
+- Tailwind CSS v4 integration
+- TypeScript support
+- Development server with HMR
+
+### Tailwind Configuration
+
+- Custom orange color palette for Q CLI branding
+- Extended color system for message types
+- Custom utility classes for conversation styling
+- Responsive design breakpoints
+
+## 🚀 Deployment
+
+The website is built as a static React application and deployed to S3 + CloudFront via the infrastructure package.
+
+Build output includes:
+- Optimized JavaScript bundles
+- CSS with Tailwind utilities
+- Static assets (images, fonts)
+- Demo conversation data
+
+## 📊 Analytics & Insights
+
+The viewer provides several analytical views:
+
+- **Tool Usage Frequency**: Which tools are used most often
+- **Conversation Patterns**: How conversations typically flow
+- **Tool Parameter Analysis**: Common parameter patterns
+- **Message Type Distribution**: Balance of different message types
+
+## 🎨 Customization
+
+### Theming
+
+Colors and styling can be customized via:
+- CSS custom properties in `index.css`
+- Tailwind theme configuration
+- Component-level styling overrides
+
+### Message Rendering
+
+Message display can be customized by:
+- Modifying message type components
+- Adjusting visual indicators
+- Customizing content formatting
+
+---
+
+**Built with**: React 18, TypeScript, Vite, Tailwind CSS v4

@@ -68,7 +68,7 @@ export function ToolsPanel({ data, selectedTool: externalSelectedTool }: ToolsPa
         <p className="text-gray-500 mb-4">{error}</p>
         <button
           onClick={() => setError(null)}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
         >
           Try again
         </button>
@@ -103,7 +103,7 @@ export function ToolsPanel({ data, selectedTool: externalSelectedTool }: ToolsPa
                   setSelectedNamespace(namespace);
                   setSelectedTool(null);
                 }}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${
                   currentNamespace === namespace
                     ? 'bg-primary-100 text-primary-800 font-medium'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -132,7 +132,7 @@ export function ToolsPanel({ data, selectedTool: externalSelectedTool }: ToolsPa
               <button
                 key={`${tool.name}-${index}`}
                 onClick={() => setSelectedTool(tool)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${
                   selectedTool === tool
                     ? 'bg-purple-100 text-purple-800 font-medium ring-2 ring-purple-300'
                     : 'text-gray-700 hover:bg-gray-100'
