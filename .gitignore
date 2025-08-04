@@ -12,6 +12,11 @@ dist-ssr/
 build/
 *.local
 
+# CDK outputs
+cdk.out/
+*.js
+*.d.ts
+
 # Environment variables
 .env
 .env.local
@@ -113,3 +118,8 @@ local/
 *.bak
 *.backup
 *~
+
+# pnpm
+.pnpm-debug.log*
+
+web-dist/

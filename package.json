@@ -1,30 +1,22 @@
 {
-  "name": "genai-conversation-viewer",
+  "name": "q-view",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "GenAI Conversation Viewer - TypeScript tool for visualizing JSON conversation history",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter website build",
+    "dev": "pnpm --filter website dev",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean",
+    "deploy:infra": "pnpm --filter infrastructure deploy"
   },
   "devDependencies": {
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
-    "@typescript-eslint/parser": "^7.2.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.6",
-    "tailwindcss": "^4.1.0",
-    "@tailwindcss/vite": "^4.1.0",
-    "typescript": "^5.2.2",
-    "vite": "^5.2.0"
-  }
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
 }
