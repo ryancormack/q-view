@@ -1,12 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "GenAI Conversation Log",
-    "description": "Schema for a conversation log with a Generative AI tool, capturing history, tool usage, and context.",
+    "title": "Q CLI Conversation Log",
+    "description": "Schema for Amazon Q Developer conversation logs, supporting multiple conversation formats with automatic transformation.",
     "type": "object",
     "required": [
       "conversation_id",
-      "history",
-      "transcript"
+      "history"
     ],
     "properties": {
       "conversation_id": {
@@ -23,13 +22,24 @@
       },
       "history": {
         "type": "array",
-        "description": "An array of conversation turns, where each turn is an array of messages.",
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/message"
+        "description": "Conversation history supporting multiple formats. Can be either: 1) Array of message arrays (standard format), or 2) Array of objects with 'user' and 'assistant' properties (style-chat format). The viewer automatically transforms between formats.",
+        "oneOf": [
+          {
+            "description": "Standard format: Array of conversation turns, where each turn is an array of messages",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/message"
+              }
+            }
+          },
+          {
+            "description": "Style-chat format: Array of objects with user and assistant message pairs",
+            "items": {
+              "$ref": "#/$defs/styleChatTurn"
+            }
           }
-        }
+        ]
       },
       "valid_history_range": {
         "type": "array",
@@ -47,7 +57,7 @@
       },
       "transcript": {
         "type": "array",
-        "description": "A flat-text transcript of the conversation.",
+        "description": "A flat-text transcript of the conversation. Optional - will be generated automatically if not provided.",
         "items": {
           "type": "string"
         }
@@ -78,6 +88,21 @@
       "model": { "type": "string" }
     },
     "$defs": {
+      "styleChatTurn": {
+        "type": "object",
+        "description": "A conversation turn in style-chat format with separate user and assistant messages",
+        "properties": {
+          "user": {
+            "$ref": "#/$defs/message",
+            "description": "User message in this turn"
+          },
+          "assistant": {
+            "$ref": "#/$defs/message", 
+            "description": "Assistant message in this turn"
+          }
+        },
+        "additionalProperties": false
+      },
       "message": {
         "type": "object",
         "description": "A single message in a conversation turn. The structure can vary.",
