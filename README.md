@@ -1,85 +1,107 @@
 # GenAI Conversation Viewer
 
-A TypeScript-based tool for visualizing JSON conversation history from GenAI tools like Q CLI. Built with React, Vite, and Tailwind CSS v4.
+A TypeScript-based monorepo for visualizing JSON conversation history from GenAI tools like Q CLI. Built with React, Vite, Tailwind CSS v4, and deployed via AWS CDK.
 
-## Features
+## 🏗️ Monorepo Structure
 
-- **File Upload**: Drag and drop or select JSON files containing conversation history
-- **Schema Validation**: Validates uploaded files against the expected conversation schema
-- **Conversation Flow**: Displays messages in chronological order with clear visual distinction between:
-  - User messages (blue)
-  - Tool use messages (purple) 
-  - AI responses (green)
-- **Tool Usage Visualization**: Shows tool calls with expandable arguments
-- **Summary Dashboard**: Provides statistics and analytics about the conversation
-- **Tools Panel**: Displays available tools and their specifications
-- **Responsive Design**: Works on desktop and mobile devices
+```
+packages/
+├── website/           # React frontend application
+│   ├── src/          # React components and logic
+│   ├── public/       # Static assets
+│   └── package.json  # Website dependencies
+└── infrastructure/   # AWS CDK deployment
+    ├── lib/         # CDK stack definitions
+    ├── bin/         # CDK app entry point
+    ├── scripts/     # Deployment scripts
+    └── package.json # Infrastructure dependencies
+```
 
-## Technology Stack
-
-- **TypeScript**: Type-safe development
-- **React 18**: Modern React with hooks
-- **Vite**: Fast build tool and dev server
-- **Tailwind CSS v4**: Latest utility-first CSS framework
-- **JSON Schema Validation**: Ensures data integrity
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18 or higher
-- npm or yarn
-
-### Installation
-
-1. Clone or download the project
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+- **Node.js 18+**
+- **pnpm 8+** (install with `npm install -g pnpm`)
+- **AWS CLI** configured (for deployment)
 
 ### Development
 
-Start the development server:
 ```bash
-npm run dev
+# Install all dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build all packages
+pnpm build
+
+# Type check all packages
+pnpm typecheck
 ```
 
-The application will be available at `http://localhost:5173`
+### Deployment
 
-### Building for Production
-
-Build the application:
 ```bash
-npm run build
+# Deploy infrastructure (first time)
+pnpm deploy:infra
+
+# Deploy website updates
+pnpm deploy:website
+
+# Deploy both
+pnpm deploy
 ```
 
-Preview the production build:
-```bash
-npm run preview
-```
+## 📦 Packages
 
-### Type Checking
+### [@q-convo-viewer/website](./packages/website)
 
-Run TypeScript type checking:
-```bash
-npm run typecheck
-```
+React frontend for visualizing GenAI conversation JSON files.
 
-## Usage
+**Features:**
+- 📁 File upload with drag & drop
+- 🔍 JSON schema validation
+- 💬 Conversation flow visualization
+- 📊 Analytics dashboard
+- 🔧 Tools panel with clickable navigation
+- 🎨 Tailwind CSS v4 styling
 
-1. **Start the application** using `npm run dev`
-2. **Upload a JSON file** by either:
-   - Dragging and dropping a `.json` file onto the upload area
-   - Clicking "Choose File" and selecting a file
-3. **View the conversation** in the main interface with three tabs:
-   - **Conversation**: Step-by-step message flow
-   - **Summary**: Statistics and analytics
-   - **Tools**: Available tools and their specifications
+**Tech Stack:**
+- TypeScript + React 18
+- Vite for fast development
+- Tailwind CSS v4
+- JSON schema validation
 
-## JSON Schema
+### [@q-convo-viewer/infrastructure](./packages/infrastructure)
 
-The application expects JSON files that match the GenAI conversation schema with the following required fields:
+AWS CDK infrastructure for deploying to `qview.chat`.
+
+**Features:**
+- 🪣 S3 static hosting (private bucket)
+- 🌐 CloudFront CDN with Origin Access Control
+- 🔒 SSL certificate via ACM
+- 🌍 Route 53 DNS management
+- 📜 Automated deployment scripts
+
+**Tech Stack:**
+- AWS CDK v2
+- TypeScript
+- CloudFormation
+
+## 🎯 Usage
+
+1. **Upload a conversation JSON file** via drag & drop or file picker
+2. **View the conversation** across three tabs:
+   - **Conversation**: Message flow with visual distinction
+   - **Summary**: Statistics and most-used tools (clickable!)
+   - **Tools**: Detailed tool specifications
+3. **Navigate seamlessly** between summary and tool details
+
+## 📋 JSON Schema
+
+Expected conversation format:
 
 ```json
 {
@@ -93,53 +115,50 @@ The application expects JSON files that match the GenAI conversation schema with
 }
 ```
 
-### Message Types
+## 🎨 Message Types
 
-The application supports three types of messages:
+- **🔵 User Messages**: User input and prompts
+- **⚫ Tool Results**: Results from tool execution  
+- **🟣 Tool Use**: AI tool invocations with arguments
+- **🟢 AI Responses**: AI-generated text responses
 
-1. **User/System Messages**: User input and system context
-2. **Tool Use Messages**: AI tool invocations with arguments
-3. **Response Messages**: AI-generated responses
+## 🛠️ Development Commands
 
-## File Structure
+```bash
+# Package-specific commands
+pnpm --filter @q-convo-viewer/website dev
+pnpm --filter @q-convo-viewer/infrastructure deploy
 
-```
-src/
-├── components/           # React components
-│   ├── ConversationFlow.tsx    # Main conversation display
-│   ├── ConversationSummary.tsx # Statistics dashboard
-│   ├── ConversationViewer.tsx  # Main viewer with tabs
-│   ├── FileUpload.tsx          # File upload interface
-│   ├── Header.tsx              # Application header
-│   ├── JsonViewer.tsx          # JSON data display
-│   ├── MessageCard.tsx         # Individual message display
-│   └── ToolsPanel.tsx          # Tools information panel
-├── types.ts              # TypeScript type definitions
-├── App.tsx               # Main application component
-├── main.tsx              # React entry point
-└── index.css             # Tailwind CSS and custom styles
+# Global commands
+pnpm build          # Build all packages
+pnpm typecheck      # Type check all packages
+pnpm clean          # Clean all packages
 ```
 
-## Customization
+## 🌐 Deployment
 
-### Styling
+The application is deployed to **https://qview.chat** using:
 
-The application uses Tailwind CSS v4 with a custom theme defined in `src/index.css`. You can modify colors, fonts, and other design tokens in the `@theme` section.
+- **S3** for static file hosting
+- **CloudFront** for global CDN
+- **Route 53** for DNS
+- **ACM** for SSL certificates
 
-### Adding Features
+Deployment is automated via the infrastructure package scripts.
 
-The modular component structure makes it easy to add new features:
+## 🔧 Architecture
 
-- Add new message types by extending the `Message` union type in `types.ts`
-- Create new visualization components in the `components/` directory
-- Add new tabs to the `ConversationViewer` component
+```
+User → Route 53 → CloudFront → S3 Bucket
+                      ↓
+                 SSL Certificate
+                    (ACM)
+```
 
-## Browser Support
-
-- Chrome/Edge 88+
-- Firefox 78+
-- Safari 14+
-
-## License
+## 📄 License
 
 This project is provided as-is for educational and development purposes.
+
+---
+
+**🔗 Live Demo**: https://qview.chat
