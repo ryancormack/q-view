@@ -9,7 +9,7 @@
     "dev": "pnpm --filter website dev",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
-    "deploy:infra": "pnpm --filter infrastructure deploy"
+    "deploy:infra:ci": "pnpm --filter infrastructure deploy:infra:ci"
   },
   "devDependencies": {
     "typescript": "^5.2.2"
