@@ -1,0 +1,64 @@
+name: Deploy Q Conversation Viewer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write   # Required for AWS OIDC
+      contents: read    # Required to checkout code
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+        
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: 🔍 Type check all packages
+        run: pnpm typecheck
+        
+      - name: 🏗️ Build website
+        run: pnpm --filter @q-view/website build
+        
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE }}
+          role-session-name: github-actions-deploy
+          aws-region: 'eu-west-1'
+          
+      - name: 🚀 Deploy CDK infrastructure
+        run: 'pnpm run deploy:infra:ci'
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          
+      - name: ✅ Deployment summary
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "🔗 Website URL: https://qview.chat"
+          echo "📊 Check CloudFront for cache invalidation status"
