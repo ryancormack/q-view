@@ -1,12 +1,15 @@
 import React from 'react';
 import { ConversationData, Message, isUserSystemMessage, isToolUseMessage, isResponseMessage } from '../types';
 import { MessageCard } from './MessageCard';
+import { normalizeConversationData } from '../utils/conversationNormalizer';
 
 interface ConversationFlowProps {
   data: ConversationData;
 }
 
-export function ConversationFlow({ data }: ConversationFlowProps) {
+export function ConversationFlow({ data: rawData }: ConversationFlowProps) {
+  // Normalize the data to ensure backwards compatibility
+  const data = normalizeConversationData(rawData);
   const { history, valid_history_range } = data;
   
   // Determine which part of history to show
@@ -30,30 +33,38 @@ export function ConversationFlow({ data }: ConversationFlowProps) {
 
   return (
     <div className="conversation-flow space-y-6 custom-scrollbar max-h-[80vh] overflow-y-auto">
-      {visibleHistory.map((turn, turnIndex) => (
-        <div key={turnIndex} className="conversation-turn">
-          <div className="flex items-center mb-4">
-            <div className="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-primary-600">{turnIndex + 1}</span>
+      {visibleHistory.map((turn, turnIndex) => {
+        // Ensure turn is an array (it should be after normalization)
+        if (!Array.isArray(turn)) {
+          console.warn(`Turn ${turnIndex} is not an array:`, turn);
+          return null;
+        }
+
+        return (
+          <div key={turnIndex} className="conversation-turn">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-primary-600">{turnIndex + 1}</span>
+              </div>
+              <div className="ml-3 flex-1 h-px bg-gray-200"></div>
+              <div className="ml-3 text-sm text-gray-500">
+                Turn {turnIndex + 1}
+              </div>
             </div>
-            <div className="ml-3 flex-1 h-px bg-gray-200"></div>
-            <div className="ml-3 text-sm text-gray-500">
-              Turn {turnIndex + 1}
+            
+            <div className="ml-11 space-y-4">
+              {turn.map((message, messageIndex) => (
+                <MessageCard
+                  key={`${turnIndex}-${messageIndex}`}
+                  message={message}
+                  turnIndex={turnIndex}
+                  messageIndex={messageIndex}
+                />
+              ))}
             </div>
           </div>
-          
-          <div className="ml-11 space-y-4">
-            {turn.map((message, messageIndex) => (
-              <MessageCard
-                key={`${turnIndex}-${messageIndex}`}
-                message={message}
-                turnIndex={turnIndex}
-                messageIndex={messageIndex}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+        );
+      })}
       
       {valid_history_range && (startIndex > 0 || endIndex < history.length) && (
         <div className="mt-8 p-4 bg-warning-50 border border-warning-200 rounded-lg">
