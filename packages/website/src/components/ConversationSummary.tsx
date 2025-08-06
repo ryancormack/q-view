@@ -1,12 +1,15 @@
 import React from 'react';
 import { ConversationData, isUserSystemMessage, isToolUseMessage, isResponseMessage } from '../types';
+import { normalizeConversationData } from '../utils/conversationNormalizer';
 
 interface ConversationSummaryProps {
   data: ConversationData;
   onToolClick?: (toolName: string) => void;
 }
 
-export function ConversationSummary({ data, onToolClick }: ConversationSummaryProps) {
+export function ConversationSummary({ data: rawData, onToolClick }: ConversationSummaryProps) {
+  // Normalize the data to ensure backwards compatibility
+  const data = normalizeConversationData(rawData);
   // Calculate statistics
   const totalTurns = data.history.length;
   const totalMessages = data.history.reduce((sum, turn) => sum + turn.length, 0);
