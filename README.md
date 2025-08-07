@@ -64,7 +64,7 @@ If you prefer to run the tool locally for additional privacy assurance:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/q-viewer.git
+git clone https://github.com/ryancormack/q-view.git
 cd q-viewer
 
 # Install dependencies
@@ -213,8 +213,8 @@ A: No, this is an independent, community-created tool.
 ## 🔗 Links
 
 - **Live Demo**: [https://qview.chat](https://qview.chat)
-- **Source Code**: [GitHub Repository](https://github.com/your-username/q-viewer)
-- **Issues**: [GitHub Issues](https://github.com/your-username/q-viewer/issues)
+- **Source Code**: [GitHub Repository](https://github.com/ryancormack/q-view)
+- **Issues**: [GitHub Issues](https://github.com/ryancormack/q-view/issues)
 
 ---
 
