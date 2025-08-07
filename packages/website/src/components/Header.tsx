@@ -50,7 +50,7 @@ export function Header({ onReset, isDemoMode = false }: HeaderProps) {
           <div className="flex items-center space-x-4">
             {/* GitHub Link */}
             <a
-              href="https://github.com/ryancormack/q-viewer"
+              href="https://github.com/ryancormack/q-view"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center px-4 py-2 text-sm font-semibold text-orange-100 hover:text-white hover:bg-orange-400 rounded-lg transition-all cursor-pointer"
