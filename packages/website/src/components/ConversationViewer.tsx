@@ -3,6 +3,7 @@ import { ConversationData } from '../types';
 import { ConversationFlow } from './ConversationFlow';
 import { ConversationSummary } from './ConversationSummary';
 import { ToolsPanel } from './ToolsPanel';
+import { ShareButton } from './ShareButton';
 
 interface ConversationViewerProps {
   data: ConversationData;
@@ -44,10 +45,13 @@ export function ConversationViewer({ data }: ConversationViewerProps) {
       {/* Header with conversation info */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-6">
         <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Conversation Analysis
-            </h2>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Conversation Analysis
+              </h2>
+              <ShareButton conversationData={data} />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">ID:</span>
@@ -67,7 +71,7 @@ export function ConversationViewer({ data }: ConversationViewerProps) {
           </div>
           
           {data.latest_summary && (
-            <div className="bg-primary-50 rounded-lg p-3 max-w-md">
+            <div className="bg-primary-50 rounded-lg p-3 max-w-md ml-6">
               <h4 className="text-sm font-medium text-primary-900 mb-1">Latest Summary</h4>
               <p className="text-sm text-primary-700 line-clamp-3">{data.latest_summary}</p>
             </div>

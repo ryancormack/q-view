@@ -1,15 +1,43 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ConversationData } from '../types';
 import { FileUpload } from '../components/FileUpload';
 import { ConversationViewer } from '../components/ConversationViewer';
 import { Header } from '../components/Header';
 import { SchemaViewer } from '../components/SchemaViewer';
+import { parseShareUrl, hasSharedData, clearShareUrl } from '../utils/sharing';
 
 export function HomePage() {
   const [conversationData, setConversationData] = useState<ConversationData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSchema, setShowSchema] = useState(false);
+  const [isLoadingShared, setIsLoadingShared] = useState(false);
+
+  // Check for shared conversation on component mount
+  useEffect(() => {
+    const loadSharedConversation = async () => {
+      if (hasSharedData()) {
+        setIsLoadingShared(true);
+        try {
+          const result = await parseShareUrl();
+          if (result.data) {
+            setConversationData(result.data);
+            setError(null);
+            // Clear the URL hash to clean up the address bar
+            clearShareUrl();
+          } else if (result.error) {
+            setError(`Failed to load shared conversation: ${result.error}`);
+          }
+        } catch (err) {
+          setError(`Failed to load shared conversation: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+          setIsLoadingShared(false);
+        }
+      }
+    };
+
+    loadSharedConversation();
+  }, []);
 
   const handleFileUpload = useCallback((data: ConversationData) => {
     setConversationData(data);
@@ -24,6 +52,8 @@ export function HomePage() {
   const handleReset = useCallback(() => {
     setConversationData(null);
     setError(null);
+    // Also clear any shared data from URL
+    clearShareUrl();
   }, []);
 
   return (
@@ -31,6 +61,22 @@ export function HomePage() {
       <Header onReset={conversationData ? handleReset : undefined} />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Loading state for shared conversations */}
+        {isLoadingShared && (
+          <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+            <div className="flex items-center">
+              <svg className="animate-spin h-5 w-5 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">Loading Shared Conversation</h3>
+                <p className="text-sm text-blue-700 mt-1">Decompressing and parsing conversation data...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg shadow-sm">
             <div className="flex items-center">
