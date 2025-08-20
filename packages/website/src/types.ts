@@ -104,6 +104,21 @@ export interface ConversationData {
   model?: string;
 }
 
+// Extended conversation data with versioning metadata
+export interface ConversationWithMetadata {
+  data: ConversationData;
+  metadata: {
+    detectedVersion: string;
+    originalFormat: string;
+    validation: {
+      isValid: boolean;
+      errors: string[];
+      warnings: string[];
+    };
+    versionSpecificData?: any;
+  };
+}
+
 // Helper type guards
 export function isUserSystemMessage(message: Message): message is UserSystemMessage {
   return 'content' in message && !('ToolUse' in message) && !('Response' in message);

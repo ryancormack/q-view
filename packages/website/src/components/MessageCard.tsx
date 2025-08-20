@@ -8,6 +8,7 @@ import {
   isToolUseResultsContent
 } from '../types';
 import { JsonViewer } from './JsonViewer';
+import { safeRenderContent, extractTextContent, isSafeToRender } from '../utils/safeRender';
 
 interface MessageCardProps {
   message: Message;
@@ -67,7 +68,7 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
           <div className="bg-white rounded border p-3 mb-3">
             <h4 className="text-sm font-medium text-gray-900 mb-2">Prompt</h4>
             <div className="text-sm text-gray-700 whitespace-pre-wrap">
-              {message.content.Prompt.prompt}
+              {safeRenderContent(message.content.Prompt.prompt)}
             </div>
           </div>
         )}
@@ -88,13 +89,13 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
                 {message.content.ToolUseResults.tool_use_results.map((result, idx) => (
                   <div key={idx} className="border rounded p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-mono text-gray-600">{result.tool_use_id}</span>
+                      <span className="text-xs font-mono text-gray-600">{safeRenderContent(result.tool_use_id)}</span>
                       <span className={`text-xs px-2 py-1 rounded ${
                         result.status === 'Success' 
                           ? 'bg-success-100 text-success-800' 
                           : 'bg-error-100 text-error-800'
                       }`}>
-                        {result.status}
+                        {safeRenderContent(result.status)}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -102,7 +103,7 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
                         <div key={contentIdx}>
                           {content.Text && (
                             <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                              {content.Text}
+                              {safeRenderContent(content.Text)}
                             </div>
                           )}
                           {content.Json && (
@@ -118,12 +119,24 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
           </div>
         )}
 
-
+        {/* Handle content that might not be in standard format */}
+        {!isPromptContent(message.content) && !isToolUseResultsContent(message.content) && (
+          <div className="bg-white rounded border p-3 mb-3">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Content</h4>
+            <div className="text-sm text-gray-700 whitespace-pre-wrap">
+              {isSafeToRender(message.content) ? (
+                safeRenderContent(message.content)
+              ) : (
+                <JsonViewer data={message.content} />
+              )}
+            </div>
+          </div>
+        )}
 
         {message.additional_context && (
           <div className="bg-gray-50 rounded border p-3">
             <h4 className="text-sm font-medium text-gray-900 mb-2">Additional Context</h4>
-            <div className="text-sm text-gray-700">{message.additional_context}</div>
+            <div className="text-sm text-gray-700">{safeRenderContent(message.additional_context)}</div>
           </div>
         )}
       </div>
@@ -151,11 +164,11 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
         <div className="bg-white rounded border p-3 mb-3">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-900">Message</h4>
-            <span className="text-xs font-mono text-gray-500">{message.ToolUse.message_id}</span>
+            <span className="text-xs font-mono text-gray-500">{safeRenderContent(message.ToolUse.message_id)}</span>
           </div>
           {message.ToolUse.content && (
             <div className="text-sm text-gray-700 whitespace-pre-wrap mb-3">
-              {message.ToolUse.content}
+              {safeRenderContent(message.ToolUse.content)}
             </div>
           )}
         </div>
@@ -165,12 +178,12 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
             <div key={idx} className="bg-white rounded border p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-900">{toolUse.name}</span>
+                  <span className="text-sm font-medium text-gray-900">{safeRenderContent(toolUse.name)}</span>
                   {toolUse.orig_name !== toolUse.name && (
-                    <span className="ml-2 text-xs text-gray-500">({toolUse.orig_name})</span>
+                    <span className="ml-2 text-xs text-gray-500">({safeRenderContent(toolUse.orig_name)})</span>
                   )}
                 </div>
-                <span className="text-xs font-mono text-gray-500">{toolUse.id}</span>
+                <span className="text-xs font-mono text-gray-500">{safeRenderContent(toolUse.id)}</span>
               </div>
               
               <button
@@ -221,10 +234,10 @@ export function MessageCard({ message, turnIndex, messageIndex }: MessageCardPro
         <div className="bg-white rounded border p-3">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-900">Response</h4>
-            <span className="text-xs font-mono text-gray-500">{message.Response.message_id}</span>
+            <span className="text-xs font-mono text-gray-500">{safeRenderContent(message.Response.message_id)}</span>
           </div>
           <div className="text-sm text-gray-700 whitespace-pre-wrap">
-            {message.Response.content}
+            {safeRenderContent(message.Response.content)}
           </div>
         </div>
       </div>

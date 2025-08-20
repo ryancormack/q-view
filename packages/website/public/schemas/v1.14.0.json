@@ -1,0 +1,543 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ConversationState",
+  "description": "Schema-aware copy of ConversationState",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "description": "Unique identifier for this conversation",
+      "type": "string"
+    },
+    "next_message": {
+      "description": "Next message to be processed (if any)",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/UserMessage"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "history": {
+      "description": "History of conversation turns",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/HistoryEntry"
+      }
+    },
+    "valid_history_range": {
+      "description": "Valid range for history indexing",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "format": "uint",
+        "minimum": 0
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "transcript": {
+      "description": "Full conversation transcript",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TranscriptEntry"
+      }
+    },
+    "tools": {
+      "description": "Available tools organized by origin",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/Tool"
+        }
+      }
+    },
+    "context_manager": {
+      "description": "Context manager for file/resource context",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextManager"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "context_message_length": {
+      "description": "Length of context messages",
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint",
+      "minimum": 0
+    },
+    "latest_summary": {
+      "description": "Latest conversation summary with metadata",
+      "type": [
+        "array",
+        "null"
+      ],
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/RequestMetadata"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "model": {
+      "description": "Model configuration",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "model_info": {
+      "description": "Detailed model information",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelInfo"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "file_line_tracker": {
+      "description": "File line tracking for modifications",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/FileLineTracker"
+      }
+    }
+  },
+  "required": [
+    "conversation_id",
+    "history",
+    "valid_history_range",
+    "transcript",
+    "tools",
+    "file_line_tracker"
+  ],
+  "$defs": {
+    "UserMessage": {
+      "type": "object",
+      "properties": {
+        "additional_context": {
+          "type": "string"
+        },
+        "env_context": {
+          "$ref": "#/$defs/UserEnvContext"
+        },
+        "timestamp": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "images": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/ImageBlock"
+          }
+        }
+      },
+      "required": [
+        "additional_context",
+        "env_context"
+      ]
+    },
+    "UserEnvContext": {
+      "type": "object",
+      "properties": {
+        "operating_system": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "current_directory": {
+          "type": "string"
+        },
+        "env_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EnvState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operating_system",
+        "architecture",
+        "current_directory"
+      ]
+    },
+    "EnvState": {
+      "type": "object",
+      "properties": {
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "variables"
+      ]
+    },
+    "ImageBlock": {
+      "type": "object",
+      "properties": {
+        "image_type": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_type",
+        "data"
+      ]
+    },
+    "HistoryEntry": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/$defs/UserMessage"
+        },
+        "assistant": {
+          "$ref": "#/$defs/AssistantMessage"
+        },
+        "request_metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestMetadata"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "user",
+        "assistant"
+      ]
+    },
+    "AssistantMessage": {
+      "type": "object",
+      "properties": {
+        "message_id": {
+          "type": "string"
+        },
+        "content": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ContentBlock"
+          }
+        }
+      },
+      "required": [
+        "message_id",
+        "content"
+      ]
+    },
+    "ContentBlock": {
+      "type": "object",
+      "properties": {
+        "content_type": {
+          "type": "string"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tool_use": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolUse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "content_type"
+      ]
+    },
+    "ToolUse": {
+      "type": "object",
+      "properties": {
+        "tool_use_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "input": true
+      },
+      "required": [
+        "tool_use_id",
+        "name",
+        "input"
+      ]
+    },
+    "ToolResult": {
+      "type": "object",
+      "properties": {
+        "tool_use_id": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ToolResultStatus"
+        }
+      },
+      "required": [
+        "tool_use_id",
+        "content",
+        "status"
+      ]
+    },
+    "ToolResultStatus": {
+      "type": "string",
+      "enum": [
+        "Success",
+        "Error"
+      ]
+    },
+    "RequestMetadata": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message_id": {
+          "type": "string"
+        },
+        "conversation_id": {
+          "type": "string"
+        },
+        "response_size": {
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "chat_conversation_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ChatConversationType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_use_ids_and_names": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "model_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message_meta_tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MessageMetaTag"
+          }
+        }
+      },
+      "required": [
+        "message_id",
+        "conversation_id",
+        "response_size",
+        "tool_use_ids_and_names",
+        "message_meta_tags"
+      ]
+    },
+    "ChatConversationType": {
+      "type": "string",
+      "enum": [
+        "NotToolUse",
+        "ToolUse"
+      ]
+    },
+    "MessageMetaTag": {
+      "type": "string",
+      "enum": [
+        "Compact"
+      ]
+    },
+    "TranscriptEntry": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "role",
+        "content",
+        "timestamp"
+      ]
+    },
+    "Tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_schema": true,
+        "tool_origin": {
+          "$ref": "#/$defs/ToolOrigin"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "input_schema",
+        "tool_origin"
+      ]
+    },
+    "ToolOrigin": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Native"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "McpServer": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "McpServer"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ContextManager": {
+      "type": "object",
+      "properties": {
+        "current_profile": {
+          "type": "string"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "current_profile",
+        "paths"
+      ]
+    },
+    "ModelInfo": {
+      "type": "object",
+      "properties": {
+        "model_id": {
+          "type": "string"
+        },
+        "model_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_id",
+        "model_name"
+      ]
+    },
+    "FileLineTracker": {
+      "type": "object",
+      "properties": {
+        "last_line_count": {
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "user_lines_added": {
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "agent_lines_added": {
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "last_line_count",
+        "user_lines_added",
+        "agent_lines_added"
+      ]
+    }
+  }
+}

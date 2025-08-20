@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ConversationData } from '../types';
+import { ConversationWithMetadata } from '../types';
 import { ConversationViewer } from '../components/ConversationViewer';
 import { Header } from '../components/Header';
 import { DemoNotice } from '../components/DemoNotice';
@@ -10,11 +10,12 @@ import {
   getErrorMessage,
   DEMO_CONVERSATIONS
 } from '../utils/demoDataLoader';
+import { normalizeConversationWithVersion } from '../utils/conversationNormalizer';
 
 export function DemoPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [conversationData, setConversationData] = useState<ConversationData | null>(null);
+  const [conversationData, setConversationData] = useState<ConversationWithMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
@@ -29,8 +30,14 @@ export function DemoPage() {
     setError(null);
     
     try {
-      const data = await loadDemoConversation(demoId);
-      setConversationData(data);
+      const rawData = await loadDemoConversation(demoId);
+      
+      // Normalize the demo data with version detection
+      const normalizedData = await normalizeConversationWithVersion(rawData);
+      
+      console.log(`Demo loaded with schema version: ${normalizedData.metadata.detectedVersion}`);
+      
+      setConversationData(normalizedData);
       setSelectedDemo(demoId);
       // Update URL to reflect selected demo
       setSearchParams({ demo: demoId });
@@ -196,7 +203,7 @@ export function DemoPage() {
         />
         
         {conversationData && (
-          <ConversationViewer data={conversationData} />
+          <ConversationViewer conversationWithMetadata={conversationData} />
         )}
       </main>
     </div>

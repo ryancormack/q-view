@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ConversationData } from '../types';
+import { ConversationWithMetadata } from '../types';
 import { FileUpload } from '../components/FileUpload';
 import { ConversationViewer } from '../components/ConversationViewer';
 import { Header } from '../components/Header';
@@ -8,7 +8,7 @@ import { SchemaViewer } from '../components/SchemaViewer';
 import { parseShareUrl, hasSharedData, clearShareUrl } from '../utils/sharing';
 
 export function HomePage() {
-  const [conversationData, setConversationData] = useState<ConversationData | null>(null);
+  const [conversationData, setConversationData] = useState<ConversationWithMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSchema, setShowSchema] = useState(false);
   const [isLoadingShared, setIsLoadingShared] = useState(false);
@@ -39,7 +39,7 @@ export function HomePage() {
     loadSharedConversation();
   }, []);
 
-  const handleFileUpload = useCallback((data: ConversationData) => {
+  const handleFileUpload = useCallback((data: ConversationWithMetadata) => {
     setConversationData(data);
     setError(null);
   }, []);
@@ -218,7 +218,7 @@ export function HomePage() {
             </div>
           </>
         ) : (
-          <ConversationViewer data={conversationData} />
+          <ConversationViewer conversationWithMetadata={conversationData} />
         )}
 
         {/* Schema Modal */}
