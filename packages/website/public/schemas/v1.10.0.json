@@ -1,0 +1,254 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Q CLI Conversation Log",
+    "description": "Schema for Amazon Q Developer conversation logs, supporting multiple conversation formats with automatic transformation.",
+    "type": "object",
+    "required": [
+      "conversation_id",
+      "history"
+    ],
+    "properties": {
+      "conversation_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Unique identifier for the entire conversation."
+      },
+      "next_message": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Identifier for the next message in a sequence, if applicable."
+      },
+      "history": {
+        "type": "array",
+        "description": "Conversation history supporting multiple formats. Can be either: 1) Array of message arrays (standard format), or 2) Array of objects with 'user' and 'assistant' properties (style-chat format). The viewer automatically transforms between formats.",
+        "oneOf": [
+          {
+            "description": "Standard format: Array of conversation turns, where each turn is an array of messages",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/message"
+              }
+            }
+          },
+          {
+            "description": "Style-chat format: Array of objects with user and assistant message pairs",
+            "items": {
+              "$ref": "#/$defs/styleChatTurn"
+            }
+          }
+        ]
+      },
+      "valid_history_range": {
+        "type": "array",
+        "description": "A tuple indicating the valid start and end indices of the history.",
+        "items": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "transcript": {
+        "type": "array",
+        "description": "A flat-text transcript of the conversation. Optional - will be generated automatically if not provided.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tools": {
+        "type": "object",
+        "description": "A collection of available tools, categorized by their namespace.",
+        "patternProperties": {
+          "^[a-zA-Z0-9_]+$": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/toolSpecification"
+            }
+          }
+        }
+      },
+      "context_manager": {
+        "type": "object",
+        "properties": {
+          "max_context_files_size": { "type": "integer" },
+          "global_config": { "$ref": "#/$defs/contextConfig" },
+          "current_profile": { "type": "string" },
+          "profile_config": { "$ref": "#/$defs/contextConfig" }
+        }
+      },
+      "context_message_length": { "type": "integer" },
+      "latest_summary": { "type": ["string", "null"] },
+      "model": { "type": "string" }
+    },
+    "$defs": {
+      "styleChatTurn": {
+        "type": "object",
+        "description": "A conversation turn in style-chat format with separate user and assistant messages",
+        "properties": {
+          "user": {
+            "$ref": "#/$defs/message",
+            "description": "User message in this turn"
+          },
+          "assistant": {
+            "$ref": "#/$defs/message", 
+            "description": "Assistant message in this turn"
+          }
+        },
+        "additionalProperties": false
+      },
+      "message": {
+        "type": "object",
+        "description": "A single message in a conversation turn. The structure can vary.",
+        "oneOf": [
+          { "$ref": "#/$defs/userSystemMessage" },
+          { "$ref": "#/$defs/toolUseMessage" },
+          { "$ref": "#/$defs/responseMessage" }
+        ]
+      },
+      "userSystemMessage": {
+          "type": "object",
+          "required": ["content"],
+          "properties": {
+              "additional_context": { "type": "string" },
+              "env_context": { "$ref": "#/$defs/envContext" },
+              "content": {
+                  "oneOf": [
+                      { "$ref": "#/$defs/promptContent" },
+                      { "$ref": "#/$defs/toolUseResultsContent" }
+                  ]
+              },
+              "images": { "type": ["array", "null"], "items": { "type": "string" } }
+          }
+      },
+      "toolUseMessage": {
+          "type": "object",
+          "required": ["ToolUse"],
+          "properties": {
+              "ToolUse": { "$ref": "#/$defs/toolUse" }
+          }
+      },
+      "responseMessage": {
+          "type": "object",
+          "required": ["Response"],
+          "properties": {
+              "Response": {
+                  "type": "object",
+                  "properties": {
+                      "message_id": { "type": "string", "format": "uuid" },
+                      "content": { "type": "string" }
+                  }
+              }
+          }
+      },
+      "envContext": {
+        "type": "object",
+        "properties": {
+          "env_state": {
+            "type": "object",
+            "properties": {
+              "operating_system": { "type": "string" },
+              "current_working_directory": { "type": "string" },
+              "environment_variables": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "promptContent": {
+        "type": "object",
+        "properties": {
+          "Prompt": {
+            "type": "object",
+            "properties": { "prompt": { "type": "string" } }
+          }
+        }
+      },
+      "toolUseResultsContent": {
+        "type": "object",
+        "properties": {
+          "ToolUseResults": {
+            "type": "object",
+            "properties": {
+              "tool_use_results": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/toolUseResult" }
+              }
+            }
+          }
+        }
+      },
+      "toolUseResult": {
+        "type": "object",
+        "properties": {
+          "tool_use_id": { "type": "string" },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "oneOf": [
+                { "properties": { "Json": { "type": "object" } } },
+                { "properties": { "Text": { "type": "string" } } }
+              ]
+            }
+          },
+          "status": { "type": "string", "enum": ["Success", "Error"] }
+        }
+      },
+      "toolUse": {
+        "type": "object",
+        "properties": {
+          "message_id": { "type": "string", "format": "uuid" },
+          "content": { "type": "string" },
+          "tool_uses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "orig_name": { "type": "string" },
+                "args": { "type": "object" },
+                "orig_args": { "type": "object" }
+              }
+            }
+          }
+        }
+      },
+      "toolSpecification": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "json": {
+                "type": "object",
+                "description": "A valid JSON Schema object describing the tool's input.",
+                "properties": {
+                  "$schema": { "type": "string", "format": "uri" },
+                  "type": { "type": "string" },
+                  "properties": { "type": "object" },
+                  "required": { "type": "array", "items": { "type": "string" } }
+                },
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "contextConfig": {
+          "type": "object",
+          "properties": {
+              "paths": { "type": "array", "items": { "type": "string" } },
+              "hooks": { "type": "object" }
+          }
+      }
+    }
+  }
