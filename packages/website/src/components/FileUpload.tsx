@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ConversationData } from '../types';
+import { ConversationWithMetadata } from '../types';
+import { normalizeConversationWithVersion } from '../utils/conversationNormalizer';
 
 interface FileUploadProps {
-  onFileUpload: (data: ConversationData) => void;
+  onFileUpload: (data: ConversationWithMetadata) => void;
   onError: (error: string) => void;
 }
 
@@ -11,39 +12,31 @@ export function FileUpload({ onFileUpload, onError }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const validateConversationData = (data: any): data is ConversationData => {
-    if (!data || typeof data !== 'object') {
-      return false;
-    }
-
-    // Check required fields
-    if (!data.conversation_id || typeof data.conversation_id !== 'string') {
-      return false;
-    }
-
-    if (!Array.isArray(data.history)) {
-      return false;
-    }
-
-    if (!Array.isArray(data.transcript)) {
-      return false;
-    }
-
-    return true;
-  };
-
   const processFile = useCallback(async (file: File) => {
     setIsProcessing(true);
     
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
+      const rawData = JSON.parse(text);
       
-      if (!validateConversationData(data)) {
-        throw new Error('Invalid Q CLI conversation format. Please ensure the JSON matches the expected schema.');
+      // Use new version-aware normalization
+      const result = await normalizeConversationWithVersion(rawData);
+      
+      console.log(`Detected conversation format: ${result.metadata.detectedVersion}`);
+      console.log(`Validation result:`, result.metadata.validation);
+      
+      // Check if validation passed
+      if (!result.metadata.validation.isValid) {
+        const errorMessage = `Invalid conversation format (${result.metadata.detectedVersion}): ${result.metadata.validation.errors.join(', ')}`;
+        throw new Error(errorMessage);
       }
       
-      onFileUpload(data);
+      // Show warnings if any
+      if (result.metadata.validation.warnings.length > 0) {
+        console.warn('Validation warnings:', result.metadata.validation.warnings);
+      }
+      
+      onFileUpload(result);
     } catch (error) {
       if (error instanceof SyntaxError) {
         onError('Invalid JSON file. Please check the file format.');

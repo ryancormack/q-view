@@ -1,4 +1,5 @@
 import { ConversationData } from '../types';
+import { normalizeConversationData, getConversationFormat } from './conversationNormalizer';
 
 /**
  * Demo conversation metadata
@@ -56,48 +57,7 @@ export class DemoDataValidationError extends DemoDataError {
 }
 
 /**
- * Transforms style-chat format to standard conversation format
- */
-function transformStyleChatFormat(data: any): ConversationData {
-  const transformedHistory: any[][] = [];
-  const transcript: string[] = [];
-
-  // Transform each history item from {user, assistant} format to array format
-  for (const item of data.history) {
-    const turn: any[] = [];
-    
-    if (item.user) {
-      turn.push(item.user);
-      // Add to transcript
-      if (item.user.content?.Prompt?.prompt) {
-        transcript.push(`User: ${item.user.content.Prompt.prompt}`);
-      }
-    }
-    
-    if (item.assistant) {
-      turn.push(item.assistant);
-      // Add to transcript
-      if (item.assistant.ToolUse?.content) {
-        transcript.push(`Assistant: ${item.assistant.ToolUse.content}`);
-      } else if (item.assistant.Response?.content) {
-        transcript.push(`Assistant: ${item.assistant.Response.content}`);
-      }
-    }
-    
-    if (turn.length > 0) {
-      transformedHistory.push(turn);
-    }
-  }
-
-  return {
-    ...data,
-    history: transformedHistory,
-    transcript: transcript.length > 0 ? transcript : data.transcript || []
-  };
-}
-
-/**
- * Validates conversation data using the same logic as FileUpload component
+ * Validates conversation data using flexible validation
  * This ensures consistency between uploaded files and demo data
  */
 export function validateConversationData(data: any): data is ConversationData {
@@ -153,18 +113,17 @@ export async function loadDemoData(filename?: string): Promise<ConversationData>
       );
     }
 
-    // Check if this is style-chat format and transform if needed
-    if (data.history && data.history.length > 0 && 
-        typeof data.history[0] === 'object' && 
-        ('user' in data.history[0] || 'assistant' in data.history[0])) {
-      console.log('Detected style-chat format, transforming...');
-      data = transformStyleChatFormat(data);
-    }
+    // Detect and log the conversation format
+    const format = getConversationFormat(data);
+    console.log(`Detected conversation format: ${format}`);
 
-    // Validate data structure
+    // Normalize the data to handle different formats
+    data = normalizeConversationData(data);
+
+    // Validate data structure after normalization
     if (!validateConversationData(data)) {
       throw new DemoDataValidationError(
-        'Demo data does not match expected conversation format. Please ensure the JSON matches the expected schema.'
+        'Demo data does not match expected conversation format after normalization. Please ensure the JSON contains valid conversation data.'
       );
     }
 
