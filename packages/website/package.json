@@ -5,12 +5,11 @@
   "type": "module",
   "description": "React frontend for GenAI Conversation Viewer",
   "scripts": {
-    "dev": "npm run build:worker && vite",
-    "build": "npm run build:worker && vite build --",
-    "build:worker": "tsc src/workers/compression-worker.ts --target ES2020 --lib ES2020,WebWorker --outDir public --skipLibCheck",
+    "dev": "vite",
+    "build": "vite build --",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist node_modules public/compression-worker.js"
+    "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
     "react": "^18.2.0",
