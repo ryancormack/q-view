@@ -77,7 +77,7 @@ export function useSharing(): [SharingState, SharingActions] {
         setState(prev => ({
           ...prev,
           isCreating: false,
-          shareUrl: result.url,
+          shareUrl: result.url || null,
           compressionStats: result.compressionStats || null,
           progress: 100,
           stage: 'Complete!',
@@ -128,7 +128,7 @@ export function useSharing(): [SharingState, SharingActions] {
     }));
 
     try {
-      const result = await parseShareUrl(url, updateProgress, signal);
+      const result = await parseShareUrl(updateProgress);
       
       if (signal.aborted) {
         return null;

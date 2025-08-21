@@ -2,7 +2,7 @@ import { ConversationData } from '../types';
 
 const MAX_URL_LENGTH = 200000; // 200KB limit - increased to accommodate v1.14.0 format while staying well within browser limits
 
-type ProgressCallback = (stage: string, progress: number) => void;
+export type ProgressCallback = (stage: string, progress: number) => void;
 
 /**
  * Optimizes conversation data for better compression by removing verbose content
@@ -308,7 +308,7 @@ async function decompressData(
   })();
   
   // Write compressed data
-  await writer.write(compressedData);
+  await writer.write(compressedData as BufferSource);
   await writer.close();
   
   await readPromise;
