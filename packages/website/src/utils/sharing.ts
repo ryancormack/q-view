@@ -7,7 +7,7 @@ export type ProgressCallback = (stage: string, progress: number) => void;
 /**
  * Optimizes conversation data for better compression by removing verbose content
  * while preserving ALL fields needed for version detection and functionality.
- * More aggressive optimization for v1.14.0 format due to its verbosity.
+ * Ultra-aggressive optimization for maximum shareability.
  */
 function optimizeConversationData(data: ConversationData): ConversationData {
   // Create a deep copy to avoid modifying the original
@@ -16,23 +16,56 @@ function optimizeConversationData(data: ConversationData): ConversationData {
   // Detect if this is v1.14.0 format for more aggressive optimization
   const isV1_14_Format = !!(optimized as any).file_line_tracker || !!(optimized as any).model_info;
   
-  // PRESERVE ALL TOP-LEVEL FIELDS - they're needed for version detection
-  // But for v1.14.0, we can be more aggressive with verbose metadata
+  console.log(`Format detection: isV1_14_Format = ${isV1_14_Format}`);
   
-  if (isV1_14_Format) {
-    // More aggressive optimization for v1.14.0 format
-    
-    // Minimize file_line_tracker but keep it present for version detection
-    if ((optimized as any).file_line_tracker) {
-      (optimized as any).file_line_tracker = {};
+  // Log what fields are actually present
+  const presentFields: any = {};
+  Object.keys(optimized).forEach(key => {
+    const size = JSON.stringify((optimized as any)[key]).length;
+    if (size > 1000) { // Only log fields > 1KB
+      presentFields[key] = (size / 1024).toFixed(1) + 'KB';
     }
-    
-    // Minimize model_info but keep it present for version detection
-    if ((optimized as any).model_info) {
-      (optimized as any).model_info = {
-        model_id: (optimized as any).model_info.model_id || 'preserved'
-      };
+  });
+  console.log('Large fields present:', presentFields);
+  
+  // ULTRA-AGGRESSIVE: Remove large redundant fields for ALL formats (not just v1.14.0)
+  const fieldsToRemove = ['transcript', 'latest_summary', 'context_manager', 'valid_history_range', 'context_message_length', 'next_message', 'file_line_tracker'];
+  
+  fieldsToRemove.forEach(field => {
+    if ((optimized as any)[field]) {
+      const size = JSON.stringify((optimized as any)[field]).length;
+      console.log(`Removing ${field}: ${(size / 1024).toFixed(1)}KB`);
+      delete (optimized as any)[field];
     }
+  });
+  
+  // Minimize model_info
+  if ((optimized as any).model_info) {
+    (optimized as any).model_info = {
+      model_id: (optimized as any).model_info.model_id || 'preserved'
+    };
+  }
+  
+  // ULTRA-AGGRESSIVE: Minimize tools definitions (63KB -> ~5KB)
+  if (optimized.tools) {
+    const toolsSizeBefore = JSON.stringify(optimized.tools).length;
+    console.log(`Tools size before compression: ${(toolsSizeBefore / 1024).toFixed(1)}KB`);
+    
+    Object.keys(optimized.tools).forEach(namespace => {
+      optimized.tools[namespace] = optimized.tools[namespace].map((tool: any) => {
+        return {
+          name: tool.name,
+          description: tool.description && tool.description.length > 100
+            ? tool.description.substring(0, 100) + '...'
+            : tool.description,
+          // Remove verbose input_schema entirely for sharing - not needed for viewing
+          input_schema: { type: 'object', properties: {}, required: [] }
+        };
+      });
+    });
+    
+    const toolsSizeAfter = JSON.stringify(optimized.tools).length;
+    console.log(`Tools size after compression: ${(toolsSizeAfter / 1024).toFixed(1)}KB (saved ${((toolsSizeBefore - toolsSizeAfter) / 1024).toFixed(1)}KB)`);
   }
   
   // Compress verbose content in history while preserving structure
@@ -45,115 +78,75 @@ function optimizeConversationData(data: ConversationData): ConversationData {
           const compressed = { ...message };
           
           // Compress very long prompts
-          if (compressed.content?.Prompt?.prompt && compressed.content.Prompt.prompt.length > 5000) {
-            compressed.content.Prompt.prompt = compressed.content.Prompt.prompt.substring(0, 5000) + '...[truncated for sharing]';
+          if (compressed.content?.Prompt?.prompt && compressed.content.Prompt.prompt.length > 3000) {
+            compressed.content.Prompt.prompt = compressed.content.Prompt.prompt.substring(0, 3000) + '...[truncated for sharing]';
           }
           
           // Compress very long additional_context
-          if (compressed.additional_context && compressed.additional_context.length > 2000) {
-            compressed.additional_context = compressed.additional_context.substring(0, 2000) + '...[truncated for sharing]';
+          if (compressed.additional_context && compressed.additional_context.length > 1000) {
+            compressed.additional_context = compressed.additional_context.substring(0, 1000) + '...[truncated for sharing]';
           }
           
           return compressed;
         });
       } else if (entry && typeof entry === 'object') {
-        // v1.14.0 format - preserve structure but be more aggressive with content
+        // v1.14.0 format - ultra-aggressive optimization
         const compressed = { ...entry };
         
-        // Compress user prompt if long (more aggressive for v1.14.0)
-        if (compressed.user?.content?.Prompt?.prompt && compressed.user.content.Prompt.prompt.length > 3000) {
+        // ULTRA-AGGRESSIVE: User content optimization
+        if (compressed.user) {
+          // Keep only essential content, remove all metadata
           compressed.user = {
-            ...compressed.user,
-            content: {
-              ...compressed.user.content,
-              Prompt: {
-                ...compressed.user.content.Prompt,
-                prompt: compressed.user.content.Prompt.prompt.substring(0, 3000) + '...[truncated for sharing]'
-              }
-            },
-            // Remove verbose timing fields
-            timestamp: undefined
+            content: compressed.user.content
+            // Remove: timestamp, additional_context, env_context, images
           };
-        } else if (compressed.user) {
-          // Even if we don't compress the prompt, remove timing data
-          compressed.user = {
-            ...compressed.user,
-            timestamp: undefined
-          };
+          
+          // Replace images with minimal placeholder
+          if (entry.user.images) {
+            compressed.user.images = ['[removed]'];
+          }
+          
+          // ULTRA-AGGRESSIVE: Tool results compression
+          if (compressed.user.content?.ToolUseResults?.tool_use_results) {
+            compressed.user.content.ToolUseResults.tool_use_results = compressed.user.content.ToolUseResults.tool_use_results.map((result: any) => {
+              return {
+                tool_use_id: result.tool_use_id,
+                status: result.status,
+                content: result.content ? { '0': { Text: '[Tool result truncated for sharing]' } } : undefined
+              };
+            });
+          }
         }
         
-        // AGGRESSIVE: Remove or minimize images (can be massive - 1.6MB+ in some cases!)
-        if (compressed.user?.images) {
-          // For sharing, we'll replace images with a placeholder to save massive space
-          compressed.user.images = ['[Images removed for sharing - original conversation had ' + (Array.isArray(compressed.user.images) ? compressed.user.images.length : 1) + ' image(s)]'];
+        // ULTRA-AGGRESSIVE: Assistant content optimization
+        if (compressed.assistant) {
+          // Aggressively truncate long responses (6-7KB -> 2KB max)
+          if (compressed.assistant.Response?.content && compressed.assistant.Response.content.length > 2000) {
+            compressed.assistant.Response.content = compressed.assistant.Response.content.substring(0, 2000) + '...[truncated for sharing]';
+          }
+          
+          // Aggressively truncate ToolUse content
+          if (compressed.assistant.ToolUse?.content && compressed.assistant.ToolUse.content.length > 1000) {
+            compressed.assistant.ToolUse.content = compressed.assistant.ToolUse.content.substring(0, 1000) + '...[truncated for sharing]';
+          }
+          
+          // ULTRA-AGGRESSIVE: Tool use compression
+          if (compressed.assistant.ToolUse?.tool_uses) {
+            compressed.assistant.ToolUse.tool_uses = compressed.assistant.ToolUse.tool_uses.map((tool: any) => {
+              return {
+                id: tool.id,
+                name: tool.name,
+                args: tool.args && JSON.stringify(tool.args).length > 500
+                  ? { summary: '[Large args truncated for sharing]' }
+                  : tool.args
+              };
+            });
+          }
         }
         
-        // Compress assistant response if long (more aggressive for v1.14.0)
-        if (compressed.assistant?.Response?.content && compressed.assistant.Response.content.length > 5000) {
-          compressed.assistant = {
-            ...compressed.assistant,
-            Response: {
-              ...compressed.assistant.Response,
-              content: compressed.assistant.Response.content.substring(0, 5000) + '...[truncated for sharing]'
-            }
-          };
-        }
-        
-        // AGGRESSIVE: Compress tool_use_results stdout/stderr (these can be massive!)
-        if (compressed.assistant?.ToolUseResult?.tool_use_results) {
-          compressed.assistant.ToolUseResult.tool_use_results = compressed.assistant.ToolUseResult.tool_use_results.map((result: any) => {
-            const compressedResult = { ...result };
-            
-            if (compressedResult.content?.Json) {
-              const json = compressedResult.content.Json;
-              
-              // Aggressively truncate stdout (often contains massive output)
-              if (json.stdout && typeof json.stdout === 'string' && json.stdout.length > 500) {
-                json.stdout = json.stdout.substring(0, 500) + '...[truncated for sharing - ' + (json.stdout.length - 500) + ' more chars]';
-              }
-              
-              // Aggressively truncate stderr
-              if (json.stderr && typeof json.stderr === 'string' && json.stderr.length > 500) {
-                json.stderr = json.stderr.substring(0, 500) + '...[truncated for sharing - ' + (json.stderr.length - 500) + ' more chars]';
-              }
-              
-              // Truncate other large content fields
-              if (json.content && typeof json.content === 'string' && json.content.length > 1000) {
-                json.content = json.content.substring(0, 1000) + '...[truncated for sharing]';
-              }
-              
-              compressedResult.content.Json = json;
-            }
-            
-            return compressedResult;
-          });
-        }
-        
-        // Minimize request_metadata but keep essential fields for v1.14.0 detection
-        if (compressed.request_metadata) {
-          compressed.request_metadata = {
-            message_id: compressed.request_metadata.message_id,
-            conversation_id: compressed.request_metadata.conversation_id,
-            model_id: compressed.request_metadata.model_id,
-            // Remove all verbose timing and performance fields:
-            // - request_start_timestamp_ms, stream_end_timestamp_ms
-            // - time_to_first_chunk, time_between_chunks
-            // - user_prompt_length, response_size
-            // - chat_conversation_type, message_meta_tags
-            // Keep only essential identification fields
-          };
-        }
-        
-        // Minimize user env_context but preserve structure
-        if (compressed.user?.env_context) {
-          compressed.user.env_context = {
-            env_state: {
-              operating_system: compressed.user.env_context.env_state?.operating_system || 'unknown',
-              current_working_directory: compressed.user.env_context.env_state?.current_working_directory || '/',
-              environment_variables: [] // Remove verbose environment variables
-            }
-          };
-        }
+        // ULTRA-AGGRESSIVE: Remove request_metadata entirely (not needed for viewing)
+        // This saves significant space across all entries
+        delete compressed.request_metadata;
         
         return compressed;
       }
@@ -162,70 +155,11 @@ function optimizeConversationData(data: ConversationData): ConversationData {
     });
   }
   
-  // Compress tool descriptions more aggressively
-  if (optimized.tools) {
-    Object.keys(optimized.tools).forEach(namespace => {
-      optimized.tools[namespace] = optimized.tools[namespace].map((tool: any) => {
-        // Preserve ToolSpecification wrapper completely if it exists
-        if (tool.ToolSpecification) {
-          return {
-            ToolSpecification: {
-              ...tool.ToolSpecification,
-              // More aggressive description compression
-              description: tool.ToolSpecification.description && tool.ToolSpecification.description.length > 200
-                ? tool.ToolSpecification.description.substring(0, 200) + '...'
-                : tool.ToolSpecification.description,
-              // Simplify input_schema for sharing (keep structure but remove verbose descriptions)
-              input_schema: tool.ToolSpecification.input_schema ? {
-                json: {
-                  type: tool.ToolSpecification.input_schema.json?.type || 'object',
-                  properties: tool.ToolSpecification.input_schema.json?.properties || {},
-                  required: tool.ToolSpecification.input_schema.json?.required || []
-                  // Remove verbose field descriptions
-                }
-              } : undefined
-            }
-          };
-        } else {
-          return {
-            ...tool,
-            // More aggressive description compression
-            description: tool.description && tool.description.length > 200
-              ? tool.description.substring(0, 200) + '...'
-              : tool.description,
-            // Simplify input_schema for sharing
-            input_schema: tool.input_schema ? {
-              type: tool.input_schema.type || 'object',
-              properties: tool.input_schema.properties || {},
-              required: tool.input_schema.required || []
-            } : undefined
-          };
-        }
-      });
-    });
-  }
-  
-  // For v1.14.0, also compress transcript if it's very verbose
-  if (isV1_14_Format && optimized.transcript && Array.isArray(optimized.transcript)) {
-    optimized.transcript = optimized.transcript.map((entry: any) => {
-      if (typeof entry === 'string') {
-        return entry.length > 1000 ? entry.substring(0, 1000) + '...[truncated]' : entry;
-      } else if (entry && typeof entry === 'object' && entry.content) {
-        return {
-          role: entry.role, // Keep role for structure
-          content: entry.content.length > 1000 ? entry.content.substring(0, 1000) + '...[truncated]' : entry.content
-          // Remove timestamp, request_id, and other verbose metadata
-        };
-      }
-      return entry;
-    });
-  }
-  
   return optimized;
 }
 
 /**
- * Compresses data using streaming compression
+ * Compresses data using deflate compression (slightly better than gzip)
  */
 async function compressData(
   data: string, 
@@ -237,7 +171,8 @@ async function compressData(
 
   onProgress?.('Compressing conversation data...', 20);
 
-  const stream = new CompressionStream('gzip');
+  // Use deflate instead of gzip for slightly better compression
+  const stream = new CompressionStream('deflate');
   const writer = stream.writable.getWriter();
   const reader = stream.readable.getReader();
   
@@ -278,7 +213,7 @@ async function compressData(
 }
 
 /**
- * Decompresses data using streaming decompression
+ * Decompresses data using deflate decompression
  */
 async function decompressData(
   compressedData: Uint8Array, 
@@ -290,7 +225,8 @@ async function decompressData(
 
   onProgress?.('Decompressing conversation data...', 30);
 
-  const stream = new DecompressionStream('gzip');
+  // Use deflate to match compression
+  const stream = new DecompressionStream('deflate');
   const writer = stream.writable.getWriter();
   const reader = stream.readable.getReader();
   
@@ -351,10 +287,16 @@ export async function createShareUrl(
     
     onProgress?.('Preparing conversation data...', 5);
     
+    // Calculate original size before optimization
+    const originalSize = new TextEncoder().encode(JSON.stringify(conversationData)).length;
+    
     // Optimize the data first
     const optimizedData = optimizeConversationData(conversationData);
     const jsonString = JSON.stringify(optimizedData);
-    const originalSize = new TextEncoder().encode(jsonString).length;
+    const optimizedSize = new TextEncoder().encode(jsonString).length;
+    
+    // Debug logging to see what's happening
+    console.log(`Optimization: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedSize / 1024).toFixed(1)}KB (saved ${((originalSize - optimizedSize) / 1024).toFixed(1)}KB)`);
     
     if (signal?.aborted) {
       throw new Error('Share operation cancelled');
@@ -365,6 +307,9 @@ export async function createShareUrl(
     // Compress the data
     const compressed = await compressData(jsonString, onProgress);
     
+    // Debug compression results
+    console.log(`Compression: ${(optimizedSize / 1024).toFixed(1)}KB → ${(compressed.length / 1024).toFixed(1)}KB (${((1 - compressed.length / optimizedSize) * 100).toFixed(1)}% compression)`);
+    
     if (signal?.aborted) {
       throw new Error('Share operation cancelled');
     }
@@ -374,6 +319,9 @@ export async function createShareUrl(
     // Convert to base64 for URL encoding
     const base64 = btoa(String.fromCharCode(...compressed));
     const shareUrl = `${window.location.origin}${window.location.pathname}#${base64}`;
+    
+    // Debug URL length
+    console.log(`URL encoding: ${(compressed.length / 1024).toFixed(1)}KB compressed → ${base64.length.toLocaleString()} base64 chars → ${shareUrl.length.toLocaleString()} total URL length`);
     
     // Check URL length
     if (shareUrl.length > MAX_URL_LENGTH) {
