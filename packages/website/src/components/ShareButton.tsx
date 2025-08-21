@@ -8,7 +8,7 @@ interface ShareButtonProps {
 
 export function ShareButton({ conversationData }: ShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
-  const [shareResult, setShareResult] = useState<{ url?: string; error?: string } | null>(null);
+  const [shareResult, setShareResult] = useState<{ url?: string; success?: boolean; error?: string; compressionStats?: { originalSize: number; compressedSize: number; ratio: string } } | null>(null);
   const [showModal, setShowModal] = useState(false);
 
   const handleShare = async () => {

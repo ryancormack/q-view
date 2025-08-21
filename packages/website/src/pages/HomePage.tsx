@@ -6,6 +6,7 @@ import { ConversationViewer } from '../components/ConversationViewer';
 import { Header } from '../components/Header';
 import { SchemaViewer } from '../components/SchemaViewer';
 import { parseShareUrl, hasSharedData, clearShareUrl } from '../utils/sharing';
+import { normalizeConversationWithVersion } from '../utils/conversationNormalizer';
 
 export function HomePage() {
   const [conversationData, setConversationData] = useState<ConversationWithMetadata | null>(null);
@@ -21,7 +22,9 @@ export function HomePage() {
         try {
           const result = await parseShareUrl();
           if (result.data) {
-            setConversationData(result.data);
+            // Normalize the shared conversation data with version detection
+            const normalizedData = await normalizeConversationWithVersion(result.data);
+            setConversationData(normalizedData);
             setError(null);
             // Clear the URL hash to clean up the address bar
             clearShareUrl();
