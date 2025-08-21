@@ -3,6 +3,7 @@ import { ConversationWithMetadata } from '../types';
 import { ConversationFlow } from './ConversationFlow';
 import { ConversationSummary } from './ConversationSummary';
 import { ToolsPanel } from './ToolsPanel';
+import { ShareButton } from './ShareButton';
 import { ConversationErrorBoundary } from './ErrorBoundary';
 import SchemaVersionBadge from './SchemaVersionBadge';
 import { SupportedVersion } from '../utils/versionDetection';
@@ -54,10 +55,15 @@ export function ConversationViewer({ conversationWithMetadata }: ConversationVie
                 <h2 className="text-xl font-semibold text-gray-900">
                   Conversation Analysis
                 </h2>
-                <SchemaVersionBadge 
-                  version={metadata.detectedVersion as SupportedVersion}
-                  validation={metadata.validation}
-                />
+                {!metadata.isShared && (
+                  <SchemaVersionBadge 
+                    version={metadata.detectedVersion as SupportedVersion}
+                    validation={metadata.validation}
+                  />
+                )}
+                <div className="ml-auto">
+                  <ShareButton conversationData={data} />
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">

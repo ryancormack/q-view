@@ -352,7 +352,8 @@ export async function normalizeConversationWithVersion(data: any): Promise<Conve
       detectedVersion: result.detectedVersion,
       originalFormat: result.originalFormat,
       validation: result.validation,
-      versionSpecificData: result.metadata
+      versionSpecificData: result.metadata,
+      originalRawData: data // Preserve original data for sharing
     }
   };
 }

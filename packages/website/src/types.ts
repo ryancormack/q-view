@@ -116,6 +116,8 @@ export interface ConversationWithMetadata {
       warnings: string[];
     };
     versionSpecificData?: any;
+    originalRawData?: any; // Store original data for sharing
+    isShared?: boolean; // Flag to indicate if loaded from share URL
   };
 }
 
