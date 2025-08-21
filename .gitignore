@@ -17,6 +17,9 @@ cdk.out/
 *.js
 *.d.ts
 
+# Built worker files
+packages/website/public/compression-worker.js
+
 # Environment variables
 .env
 .env.local
