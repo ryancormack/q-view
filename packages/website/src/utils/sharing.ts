@@ -1,6 +1,6 @@
 import { ConversationData } from '../types';
 
-const MAX_URL_LENGTH = 100000; // Increased limit - most browsers support URLs up to 2MB
+const MAX_URL_LENGTH = 200000; // 200KB limit - increased to accommodate v1.14.0 format while staying well within browser limits
 const CHUNK_SIZE = 64 * 1024; // 64KB chunks for streaming
 const PROGRESS_YIELD_INTERVAL = 10; // Yield control every 10 chunks
 
@@ -9,51 +9,182 @@ export interface ProgressCallback {
 }
 
 /**
- * Optimizes conversation data for better compression by removing redundant information
+ * Optimizes conversation data for better compression by removing verbose content
+ * while preserving ALL fields needed for version detection and functionality.
+ * More aggressive optimization for v1.14.0 format due to its verbosity.
  */
 function optimizeConversationData(data: ConversationData): ConversationData {
   // Create a deep copy to avoid modifying the original
   const optimized = JSON.parse(JSON.stringify(data));
   
-  // Remove or minimize redundant data that doesn't affect the core conversation
-  if (optimized.history) {
-    optimized.history = optimized.history.map((turn: any[]) => {
-      return turn.map((message: any) => {
-        // Keep essential fields, remove verbose metadata
-        const essential = {
-          role: message.role,
-          content: message.content
-        };
+  // Detect if this is v1.14.0 format for more aggressive optimization
+  const isV1_14_Format = !!(optimized as any).file_line_tracker || !!(optimized as any).model_info;
+  
+  // PRESERVE ALL TOP-LEVEL FIELDS - they're needed for version detection
+  // But for v1.14.0, we can be more aggressive with verbose metadata
+  
+  if (isV1_14_Format) {
+    // More aggressive optimization for v1.14.0 format
+    
+    // Minimize file_line_tracker but keep it present for version detection
+    if ((optimized as any).file_line_tracker) {
+      (optimized as any).file_line_tracker = {};
+    }
+    
+    // Minimize model_info but keep it present for version detection
+    if ((optimized as any).model_info) {
+      (optimized as any).model_info = {
+        model_id: (optimized as any).model_info.model_id || 'preserved'
+      };
+    }
+  }
+  
+  // Compress verbose content in history while preserving structure
+  if (optimized.history && Array.isArray(optimized.history)) {
+    optimized.history = optimized.history.map((entry: any) => {
+      // Handle both v1.10.0 (array) and v1.14.0 (object) formats
+      if (Array.isArray(entry)) {
+        // v1.10.0 format - compress individual messages
+        return entry.map((message: any) => {
+          const compressed = { ...message };
+          
+          // Compress very long prompts
+          if (compressed.content?.Prompt?.prompt && compressed.content.Prompt.prompt.length > 5000) {
+            compressed.content.Prompt.prompt = compressed.content.Prompt.prompt.substring(0, 5000) + '...[truncated for sharing]';
+          }
+          
+          // Compress very long additional_context
+          if (compressed.additional_context && compressed.additional_context.length > 2000) {
+            compressed.additional_context = compressed.additional_context.substring(0, 2000) + '...[truncated for sharing]';
+          }
+          
+          return compressed;
+        });
+      } else if (entry && typeof entry === 'object') {
+        // v1.14.0 format - preserve structure but be more aggressive with content
+        const compressed = { ...entry };
         
-        // Preserve tool use information but compress it
-        if (message.role === 'assistant' && message.content) {
-          const content = Array.isArray(message.content) ? message.content : [message.content];
-          essential.content = content.map((item: any) => {
-            if (item.type === 'tool_use') {
-              return {
-                type: 'tool_use',
-                id: item.id,
-                name: item.name,
-                input: item.input
-              };
-            }
-            return item;
-          });
+        // Compress user prompt if long (more aggressive for v1.14.0)
+        if (compressed.user?.content?.Prompt?.prompt && compressed.user.content.Prompt.prompt.length > 3000) {
+          compressed.user = {
+            ...compressed.user,
+            content: {
+              ...compressed.user.content,
+              Prompt: {
+                ...compressed.user.content.Prompt,
+                prompt: compressed.user.content.Prompt.prompt.substring(0, 3000) + '...[truncated for sharing]'
+              }
+            },
+            // Remove verbose timing fields
+            timestamp: undefined
+          };
+        } else if (compressed.user) {
+          // Even if we don't compress the prompt, remove timing data
+          compressed.user = {
+            ...compressed.user,
+            timestamp: undefined
+          };
         }
         
-        return essential;
+        // Compress assistant response if long (more aggressive for v1.14.0)
+        if (compressed.assistant?.Response?.content && compressed.assistant.Response.content.length > 5000) {
+          compressed.assistant = {
+            ...compressed.assistant,
+            Response: {
+              ...compressed.assistant.Response,
+              content: compressed.assistant.Response.content.substring(0, 5000) + '...[truncated for sharing]'
+            }
+          };
+        }
+        
+        // Minimize request_metadata but keep essential fields for v1.14.0 detection
+        if (compressed.request_metadata) {
+          compressed.request_metadata = {
+            message_id: compressed.request_metadata.message_id,
+            conversation_id: compressed.request_metadata.conversation_id,
+            model_id: compressed.request_metadata.model_id,
+            // Remove all verbose timing and performance fields:
+            // - request_start_timestamp_ms, stream_end_timestamp_ms
+            // - time_to_first_chunk, time_between_chunks
+            // - user_prompt_length, response_size
+            // - chat_conversation_type, message_meta_tags
+            // Keep only essential identification fields
+          };
+        }
+        
+        // Minimize user env_context but preserve structure
+        if (compressed.user?.env_context) {
+          compressed.user.env_context = {
+            operating_system: compressed.user.env_context.operating_system || 'unknown',
+            architecture: compressed.user.env_context.architecture || 'unknown',
+            current_directory: compressed.user.env_context.current_directory || '/',
+            // Remove verbose environment variables and other details
+          };
+        }
+        
+        return compressed;
+      }
+      
+      return entry;
+    });
+  }
+  
+  // Compress tool descriptions more aggressively
+  if (optimized.tools) {
+    Object.keys(optimized.tools).forEach(namespace => {
+      optimized.tools[namespace] = optimized.tools[namespace].map((tool: any) => {
+        // Preserve ToolSpecification wrapper completely if it exists
+        if (tool.ToolSpecification) {
+          return {
+            ToolSpecification: {
+              ...tool.ToolSpecification,
+              // More aggressive description compression
+              description: tool.ToolSpecification.description && tool.ToolSpecification.description.length > 200
+                ? tool.ToolSpecification.description.substring(0, 200) + '...'
+                : tool.ToolSpecification.description,
+              // Simplify input_schema for sharing (keep structure but remove verbose descriptions)
+              input_schema: tool.ToolSpecification.input_schema ? {
+                json: {
+                  type: tool.ToolSpecification.input_schema.json?.type || 'object',
+                  properties: tool.ToolSpecification.input_schema.json?.properties || {},
+                  required: tool.ToolSpecification.input_schema.json?.required || []
+                  // Remove verbose field descriptions
+                }
+              } : undefined
+            }
+          };
+        } else {
+          return {
+            ...tool,
+            // More aggressive description compression
+            description: tool.description && tool.description.length > 200
+              ? tool.description.substring(0, 200) + '...'
+              : tool.description,
+            // Simplify input_schema for sharing
+            input_schema: tool.input_schema ? {
+              type: tool.input_schema.type || 'object',
+              properties: tool.input_schema.properties || {},
+              required: tool.input_schema.required || []
+            } : undefined
+          };
+        }
       });
     });
   }
   
-  // Keep tools but remove verbose descriptions for compression
-  if (optimized.tools) {
-    Object.keys(optimized.tools).forEach(namespace => {
-      optimized.tools[namespace] = optimized.tools[namespace].map((tool: any) => ({
-        name: tool.name,
-        description: tool.description?.substring(0, 200) + (tool.description?.length > 200 ? '...' : ''), // Truncate long descriptions
-        input_schema: tool.input_schema
-      }));
+  // For v1.14.0, also compress transcript if it's very verbose
+  if (isV1_14_Format && optimized.transcript && Array.isArray(optimized.transcript)) {
+    optimized.transcript = optimized.transcript.map((entry: any) => {
+      if (typeof entry === 'string') {
+        return entry.length > 1000 ? entry.substring(0, 1000) + '...[truncated]' : entry;
+      } else if (entry && typeof entry === 'object' && entry.content) {
+        return {
+          role: entry.role, // Keep role for structure
+          content: entry.content.length > 1000 ? entry.content.substring(0, 1000) + '...[truncated]' : entry.content
+          // Remove timestamp, request_id, and other verbose metadata
+        };
+      }
+      return entry;
     });
   }
   
@@ -76,8 +207,8 @@ async function compressData(
     throw new Error('Compression cancelled');
   }
 
-  // Choose compression format based on data size
-  const compressionFormat = data.length > 100000 ? 'deflate' : 'gzip';
+  // Use consistent gzip compression for all data sizes to avoid format mismatches
+  const compressionFormat = 'gzip';
   onProgress?.('Initializing compression...', 0);
 
   const stream = new CompressionStream(compressionFormat);

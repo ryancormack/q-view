@@ -16,6 +16,7 @@ export function ShareButton({ conversationData }: ShareButtonProps) {
     setShareResult(null);
     
     try {
+      // Always use the normalized data for sharing (smaller, more compatible)
       const result = await createShareUrl(conversationData);
       setShareResult(result);
       setShowModal(true);

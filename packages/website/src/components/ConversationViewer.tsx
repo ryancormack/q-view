@@ -55,10 +55,12 @@ export function ConversationViewer({ conversationWithMetadata }: ConversationVie
                 <h2 className="text-xl font-semibold text-gray-900">
                   Conversation Analysis
                 </h2>
-                <SchemaVersionBadge 
-                  version={metadata.detectedVersion as SupportedVersion}
-                  validation={metadata.validation}
-                />
+                {!metadata.isShared && (
+                  <SchemaVersionBadge 
+                    version={metadata.detectedVersion as SupportedVersion}
+                    validation={metadata.validation}
+                  />
+                )}
                 <div className="ml-auto">
                   <ShareButton conversationData={data} />
                 </div>

@@ -24,6 +24,8 @@ export function HomePage() {
           if (result.data) {
             // Normalize the shared conversation data with version detection
             const normalizedData = await normalizeConversationWithVersion(result.data);
+            // Mark as shared conversation
+            normalizedData.metadata.isShared = true;
             setConversationData(normalizedData);
             setError(null);
             // Clear the URL hash to clean up the address bar
